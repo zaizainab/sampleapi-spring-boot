@@ -1,5 +1,7 @@
 package com.ecomindo.onboarding.sampleapi.services;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,10 +27,9 @@ public class MoviesServiceImpl implements MoviesService {
 	@Override
 	public MoviesModel insert(String name, String description, String genre, String username) {
 		try {
-//			Instant instant = Instant.now();
-//			long currentDate = instant.toEpochMilli();
+			Date moment = Date.from(Instant.now());	
 			
-			MoviesModel movie = moviesDao.save(new MoviesModel(name, description, genre, username, null, username, null));
+			MoviesModel movie = moviesDao.save(new MoviesModel(name, description, genre, username, moment, username, moment));
 			return movie;
 		} catch (Exception e) {
 			throw e;
