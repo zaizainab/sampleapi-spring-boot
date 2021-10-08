@@ -1,6 +1,8 @@
 package com.ecomindo.onboarding.sampleapi.controller;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecomindo.onboarding.sampleapi.dao.MoviesDao;
@@ -18,6 +21,7 @@ import com.ecomindo.onboarding.sampleapi.dto.NewMoviesDTO;
 import com.ecomindo.onboarding.sampleapi.dto.ResponseDTO;
 import com.ecomindo.onboarding.sampleapi.dto.UpdateMovieDTO;
 import com.ecomindo.onboarding.sampleapi.model.MoviesModel;
+import com.ecomindo.onboarding.sampleapi.services.FileService;
 import com.ecomindo.onboarding.sampleapi.services.MoviesService;
 
 import io.swagger.annotations.Api;
@@ -30,6 +34,9 @@ public class MoviesController {
 
 	@Autowired
 	MoviesDao moviesDao;
+	
+	@Autowired
+	FileService fileService;
 	
 	@Autowired
 	MoviesService moviesService;
@@ -112,5 +119,52 @@ public class MoviesController {
 	@PostMapping(value = "/name", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<MoviesModel>> getMoviesByName2(@RequestBody String name){
 		return ResponseEntity.ok().body(moviesService.getMoviesByName(name));
+	}
+	
+	@ApiOperation("upload file from SFTP")
+	@RequestMapping(path = "/upload", method = RequestMethod.POST)
+	public ResponseDTO upload(@RequestBody String filename) {
+		ResponseDTO response = new ResponseDTO();
+		try {
+			List<String> fileContent = fileService.getFileContentByFilename(filename);
+			
+			if(fileContent.isEmpty())
+				throw new Exception("There is no such file");
+			
+			fileContent.remove(0);
+			
+			List<String> firstBatchValue = new ArrayList<>(fileContent.subList(0, (fileContent.size())/2));
+			List<String> secondBatchValue = new ArrayList<>(fileContent.subList((fileContent.size())/2, fileContent.size()));
+			Future<Void> firstBatch = moviesService.upload(firstBatchValue);
+			Future<Void> secondBatch = moviesService.upload(secondBatchValue);
+			
+			
+			while (!(firstBatch.isDone() && secondBatch.isDone())) {
+			  if(!firstBatch.isDone()){
+			  System.out.println("Add file From File Job first batch is running..."); }
+			  
+			  if(!secondBatch.isDone()){
+				  System.out.println("Add file From File Job second batch is running..."); 
+			  }
+			  
+//			  if(firstBatch.isDone() && secondBatch.isDone()) {
+//				  System.out.println("Processing all batch is done..."); 
+//			  }
+//			  if(firstBatch.isCancelled() || secondBatch.isCancelled())
+//				  System.out.println("Error...");
+			  
+			  Thread.sleep(500); 
+			}
+			 
+			
+			response.setCode("200");
+			response.setMessage("Uploaded the files successfully");
+
+			return response;
+		} catch (Exception e) {
+			response.setCode("500");
+			response.setMessage("Could not upload files: " + e.getMessage());
+			return response;
+		}
 	}
 }

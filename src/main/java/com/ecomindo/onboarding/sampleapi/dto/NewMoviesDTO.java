@@ -7,6 +7,10 @@ public class NewMoviesDTO {
 	private String genre;
 	private String username;
 	
+	public NewMoviesDTO() {
+		
+	}
+	
 	public NewMoviesDTO(String name, String description, String genre, String username) {
 		this.name = name;
 		this.description = description;

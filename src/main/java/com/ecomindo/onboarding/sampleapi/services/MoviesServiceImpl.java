@@ -4,6 +4,9 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -22,6 +25,8 @@ public class MoviesServiceImpl implements MoviesService {
 	
 	@Autowired
 	MoviesDao moviesDao;
+	
+    private ExecutorService executor = Executors.newFixedThreadPool(2);
 
 	@Transactional
 	@Override
@@ -91,6 +96,38 @@ public class MoviesServiceImpl implements MoviesService {
 	public List<MoviesModel> getMoviesByName(String name) {
 		return StreamSupport.stream(moviesDao.findByName(name).spliterator(), false)
 				.collect(Collectors.toList());
+	}
+
+	@Override
+	public Future<Void> upload(List<String> content) {
+		return executor.submit(() -> {
+            try{
+                String denominator = "	";
+                for(String items : content){
+                    String name = items.split(denominator)[0]; //.replaceAll("\uFEFF", "");
+                    String description = items.split(denominator)[1];
+                    String genre = items.split(denominator)[2];
+    
+                    List<MoviesModel> movie = moviesDao.findByName(name);
+                    if(movie.size()>0){
+                        moviesDao.delete(movie.get(0));
+                    }
+                    
+                    MoviesModel newMovie = new MoviesModel();
+                    newMovie.setName(name);
+                    newMovie.setDescription(description);
+                    newMovie.setGenre(genre);
+                    newMovie.setCreatedDate(Date.from(Instant.now()));
+                    newMovie.setCreatedBy("upload user");
+                    
+                    moviesDao.save(newMovie);
+                }
+            }catch(Exception e){
+                throw e;
+            }     
+            
+            return null;
+        });
 	}
 	
 }

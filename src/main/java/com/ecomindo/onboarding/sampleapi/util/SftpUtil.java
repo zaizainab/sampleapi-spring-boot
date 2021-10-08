@@ -1,14 +1,19 @@
 package com.ecomindo.onboarding.sampleapi.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
@@ -149,7 +154,53 @@ public class SftpUtil {
 			// channelSftp.disconnect();
 		}
 	}
+	
+	public List<String> sftpGetFile(String remoteFileName) throws Exception {
+		ChannelSftp channelSftp = null;
+        List<String> result = new ArrayList<>();
+		try {
+			channelSftp = getSftpClient();
 
+			// Get File From Folder Server
+            InputStream stream = channelSftp.get(remoteFileName);
+			BufferedReader read = new BufferedReader(new InputStreamReader(stream,"UTF-8"));
+			result = read.lines().collect(Collectors.toList());
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			closeSession(channelSftp);
+			// channelSftp.disconnect();
+		}
+        return result;
+	}
+
+	public String sftpArchiveAllFilenameByCode(String sourcePath, String outputPath, String code) throws Exception {
+		ChannelSftp channelSftp = null;
+        String result = null;
+		try {
+			channelSftp = getSftpClient();
+			Vector<LsEntry> entries = channelSftp.ls("*.*");
+			for (LsEntry lsEntry : entries) {
+				if(lsEntry.getFilename().contains(code)) {
+					File f = new File(sourcePath.concat("/").concat(lsEntry.getFilename()));
+
+					// Upload or put file to server folder IN
+					channelSftp.put(new FileInputStream(f), outputPath.concat("/").concat(lsEntry.getFilename()));
+					
+//					channelSftp.rm(lsEntry.getFilename());
+				}
+			}
+			
+			result = "done";
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			closeSession(channelSftp);
+			// channelSftp.disconnect();
+		}
+        return result;
+	}
+	
 	public Map<String, String> sftpGetToDirFile(String remoteFileName, String outputFile, Map<String, String> lsStatus,
 			String bankCode) throws Exception {
 		ChannelSftp channelSftp = null;

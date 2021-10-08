@@ -3,6 +3,7 @@ package com.ecomindo.onboarding.sampleapi.services;
 import com.ecomindo.onboarding.sampleapi.dto.UpdateMovieDTO;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
 import com.ecomindo.onboarding.sampleapi.model.MoviesModel;
 
@@ -14,4 +15,5 @@ public interface MoviesService {
 	public List<MoviesModel> getMovies();
 	public List<MoviesModel> getMoviesByName(String name);
 	public MoviesModel insert2(MoviesModel moviesModel);
+	public Future<Void> upload(List<String> content);
 }
