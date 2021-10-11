@@ -174,7 +174,7 @@ public class MoviesController {
 	}
 	
 	@RequestMapping(value = "/check-user", method=RequestMethod.GET)
-	@RolesAllowed(value = {"user"})
+	@RolesAllowed(value = {"User"})
 	public ResponseEntity<?> checkAuthUser(Authentication authentication) {
 		try {
 			return new ResponseEntity<>(authentication, HttpStatus.OK);
