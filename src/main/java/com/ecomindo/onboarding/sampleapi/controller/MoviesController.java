@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import javax.annotation.security.RolesAllowed;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -110,6 +114,7 @@ public class MoviesController {
 	}
 	
 	@ApiOperation("Get movies by name")
+	@RolesAllowed(value = "User")
 	@GetMapping(value = "movies/{name}")
 	public ResponseEntity<List<MoviesModel>> getMoviesByName(@ApiParam(value = "Name of movie", required = true) @PathVariable String name){
 		return ResponseEntity.ok().body(moviesService.getMoviesByName(name));
@@ -165,6 +170,26 @@ public class MoviesController {
 			response.setCode("500");
 			response.setMessage("Could not upload files: " + e.getMessage());
 			return response;
+		}
+	}
+	
+	@RequestMapping(value = "/check-user", method=RequestMethod.GET)
+	@RolesAllowed(value = {"user"})
+	public ResponseEntity<?> checkAuthUser(Authentication authentication) {
+		try {
+			return new ResponseEntity<>(authentication, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(e, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@RequestMapping(value = "/check-admin", method=RequestMethod.GET)
+	@RolesAllowed(value = {"Admin"})
+	public ResponseEntity<?> checkAuthAdmin(Authentication authentication) {
+		try {
+			return new ResponseEntity<>(authentication, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 }
